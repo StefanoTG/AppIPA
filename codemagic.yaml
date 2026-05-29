@@ -14,22 +14,47 @@ workflows:
       - name: List schemes
         script: xcodebuild -project VPNManager/VPNManager.xcodeproj -list
 
-      - name: Build Archive (unsigned)
+      - name: Build Archive (ad-hoc signed)
         script: |
           xcodebuild archive \
             -project VPNManager/VPNManager.xcodeproj \
             -scheme VPNManager \
             -configuration Release \
             -archivePath "$CM_BUILD_DIR/VPNManager.xcarchive" \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=YES \
+            CODE_SIGNING_ALLOWED=YES \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
             ONLY_ACTIVE_ARCH=NO \
             SWIFT_SERIALIZE_DEBUGGING_OPTIONS=NO
 
-      - name: Package IPA
+      - name: Export IPA (ad-hoc)
         script: |
+          cat > "$CM_BUILD_DIR/ExportOptions.plist" << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>ad-hoc</string>
+            <key>compileBitcode</key>
+            <false/>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>stripSwiftSymbols</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+
+          # Try xcodebuild export first; if it fails, manually package
+          xcodebuild -exportArchive \
+            -archivePath "$CM_BUILD_DIR/VPNManager.xcarchive" \
+            -exportPath "$CM_BUILD_DIR/export" \
+            -exportOptionsPlist "$CM_BUILD_DIR/ExportOptions.plist" \
+            CODE_SIGN_IDENTITY="-" || true
+
+          # Always manually package as fallback (works with Feather/Sideloady)
           APP_PATH=$(find "$CM_BUILD_DIR/VPNManager.xcarchive" -name "*.app" | head -1)
           echo "App found at: $APP_PATH"
           mkdir -p "$CM_BUILD_DIR/Payload"
