@@ -1,0 +1,42 @@
+workflows:
+  vpn-manager-ipa:
+    name: VPN Manager IPA Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      xcode: latest
+
+    scripts:
+      - name: Show Xcode version
+        script: xcodebuild -version
+
+      - name: List schemes
+        script: xcodebuild -project VPNManager/VPNManager.xcodeproj -list
+
+      - name: Build Archive (unsigned)
+        script: |
+          xcodebuild archive \
+            -project VPNManager/VPNManager.xcodeproj \
+            -scheme VPNManager \
+            -configuration Release \
+            -archivePath "$CM_BUILD_DIR/VPNManager.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            ONLY_ACTIVE_ARCH=NO \
+            SWIFT_SERIALIZE_DEBUGGING_OPTIONS=NO
+
+      - name: Package IPA
+        script: |
+          APP_PATH=$(find "$CM_BUILD_DIR/VPNManager.xcarchive" -name "*.app" | head -1)
+          echo "App found at: $APP_PATH"
+          mkdir -p "$CM_BUILD_DIR/Payload"
+          cp -r "$APP_PATH" "$CM_BUILD_DIR/Payload/VPNManager.app"
+          cd "$CM_BUILD_DIR"
+          zip -r VPNManager.ipa Payload/
+          echo "IPA size: $(du -sh VPNManager.ipa | cut -f1)"
+
+    artifacts:
+      - $CM_BUILD_DIR/VPNManager.ipa
