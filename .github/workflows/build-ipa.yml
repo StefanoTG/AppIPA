@@ -21,6 +21,9 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
+      - name: List available schemes
+        run: xcodebuild -project VPNManager/VPNManager.xcodeproj -list
+
       - name: Build Archive (no code signing)
         run: |
           xcodebuild archive \
@@ -32,7 +35,8 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            ONLY_ACTIVE_ARCH=NO
+            ONLY_ACTIVE_ARCH=NO \
+            SWIFT_SERIALIZE_DEBUGGING_OPTIONS=NO 2>&1
 
       - name: Package IPA from archive
         run: |
