@@ -1,0 +1,94 @@
+Build me a private iOS app in SwiftUI for managing my VPN panel customers. I will not publish it to App Store; I will export/install it as IPA for personal use.
+
+App name: VPN Manager
+Design: modern dark mode app with indigo/purple style, rounded cards, clean iOS look.
+
+Main features:
+1. Customer list screen
+- Show all customers in cards.
+- Each card shows:
+  - customer name
+  - monthly price/payment amount
+  - user count, like “20 users”
+  - username/login
+  - password
+  - next payment date
+  - status: Active, Expired, Not Extended
+- Sort customers by nearest payment date.
+- Highlight overdue payments in red.
+- Highlight payments due today/tomorrow in orange/indigo.
+
+2. Add customer
+Fields:
+- Customer name
+- Payment amount
+- Currency: USDT / USD / Manat / other
+- User count
+- VPN panel username
+- VPN panel password
+- Notes
+- Payment date
+- Monthly billing toggle
+
+3. Customer detail page
+Buttons:
+- Extended
+- Didn’t Extend
+- Edit
+- Delete
+- Copy username
+- Copy password
+
+4. Extended button
+When I tap “Extended”:
+- Move payment date forward by 1 month automatically.
+- Mark customer as Active.
+- Save payment history with date and amount.
+
+5. Didn’t Extend button
+When I tap it:
+- Mark customer as Not Extended/Expired.
+- Keep customer in list but show red status.
+
+6. Notifications
+- Send local iOS notifications when customer payment date arrives.
+- Also remind me 1 day before.
+- Notification text example:
+  “Payment due: Merdan — 400m — 20 users”
+- Ask notification permission on first launch.
+- Notifications must update when payment date changes.
+
+7. Security
+- Store data locally on the phone.
+- Use secure storage/encryption for passwords if possible, preferably iOS Keychain.
+- Do not use any external server.
+- Add Face ID / passcode lock before opening the app.
+
+8. Data
+- Use local storage with SwiftData or CoreData.
+- Include search by customer name.
+- Include filters: All, Active, Due Soon, Expired, Not Extended.
+- Add backup/export to JSON and import from JSON.
+
+9. UI screens
+- Dashboard with totals:
+  - total customers
+  - active customers
+  - expired customers
+  - monthly income total
+  - payments due this week
+- Customer list
+- Add/Edit customer
+- Customer details
+- Settings
+
+10. Example data based on my current Reminders format:
+- MaxManager, 45 USDT, 30 users, username max1, password max2, payment date 24.05.2026
+- Hojjy, 1000m, 25 users, username hoja1, password hoja2, payment date 02.06.2026
+- Orash, 300m, 13 users, username orash11, password OrasH123456$, payment date 02.06.2026
+- Selim, 30 USDT, 20 users, username selim11, password selim22, payment date 08.06.2026
+- Merdan, 400m, 20 users, username merdan, password MerdaN1234$$, payment date 25.06.2026
+- Aga, 300m, 10 users, username aga1, password aga1, payment date 26.06.2026
+
+Important:
+Generate the full iOS SwiftUI project code. Make it simple to run in Xcode and export as IPA. Include instructions for building the IPA for personal installation.
