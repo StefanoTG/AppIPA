@@ -11,10 +11,7 @@ workflows:
       - name: Show Xcode version
         script: xcodebuild -version
 
-      - name: List schemes
-        script: xcodebuild -project VPNManager/VPNManager.xcodeproj -list
-
-      - name: Build Archive (ad-hoc signed)
+      - name: Build Archive
         script: |
           xcodebuild archive \
             -project VPNManager/VPNManager.xcodeproj \
@@ -22,46 +19,44 @@ workflows:
             -configuration Release \
             -archivePath "$CM_BUILD_DIR/VPNManager.xcarchive" \
             CODE_SIGN_IDENTITY="-" \
-            CODE_SIGNING_REQUIRED=YES \
+            CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=YES \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
             ONLY_ACTIVE_ARCH=NO \
-            SWIFT_SERIALIZE_DEBUGGING_OPTIONS=NO
+            SWIFT_SERIALIZE_DEBUGGING_OPTIONS=NO \
+            PROVISIONING_PROFILE_SPECIFIER=""
 
-      - name: Export IPA (ad-hoc)
+      - name: Prepare clean IPA for Feather
         script: |
-          cat > "$CM_BUILD_DIR/ExportOptions.plist" << EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>ad-hoc</string>
-            <key>compileBitcode</key>
-            <false/>
-            <key>signingStyle</key>
-            <string>manual</string>
-            <key>stripSwiftSymbols</key>
-            <true/>
-          </dict>
-          </plist>
-          EOF
-
-          # Try xcodebuild export first; if it fails, manually package
-          xcodebuild -exportArchive \
-            -archivePath "$CM_BUILD_DIR/VPNManager.xcarchive" \
-            -exportPath "$CM_BUILD_DIR/export" \
-            -exportOptionsPlist "$CM_BUILD_DIR/ExportOptions.plist" \
-            CODE_SIGN_IDENTITY="-" || true
-
-          # Always manually package as fallback (works with Feather/Sideloady)
+          # Find the built .app
           APP_PATH=$(find "$CM_BUILD_DIR/VPNManager.xcarchive" -name "*.app" | head -1)
           echo "App found at: $APP_PATH"
+
+          # Copy to Payload folder
           mkdir -p "$CM_BUILD_DIR/Payload"
           cp -r "$APP_PATH" "$CM_BUILD_DIR/Payload/VPNManager.app"
+
+          APP="$CM_BUILD_DIR/Payload/VPNManager.app"
+
+          # Remove embedded provisioning profile (not needed, Feather adds its own)
+          rm -f "$APP/embedded.mobileprovision"
+
+          # Strip ALL existing code signatures from the main binary
+          BINARY="$APP/VPNManager"
+          echo "Stripping signatures from binary..."
+          codesign --remove-signature "$BINARY" || true
+
+          # Remove _CodeSignature folder entirely so Feather starts clean
+          rm -rf "$APP/_CodeSignature"
+
+          # Re-apply minimal ad-hoc signature so the binary is valid Mach-O
+          codesign -f -s "-" "$BINARY" || true
+
+          # Package as IPA
           cd "$CM_BUILD_DIR"
-          zip -r VPNManager.ipa Payload/
-          echo "IPA size: $(du -sh VPNManager.ipa | cut -f1)"
+          zip -qr VPNManager.ipa Payload/
+          echo "Final IPA size: $(du -sh VPNManager.ipa | cut -f1)"
+          echo "Done — IPA ready for Feather"
 
     artifacts:
       - $CM_BUILD_DIR/VPNManager.ipa
